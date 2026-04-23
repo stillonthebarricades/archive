@@ -14,6 +14,7 @@
     --site-accent-strong: #2f412c;
     --site-accent-alt: #8e4d3f;
     --site-highlight: #b8944f;
+    --title-font-family: "Yeseva One", "Roboto Slab", "Rockwell", "Clarendon", "Georgia", "Times New Roman", Times, serif;
 
     --content-max: 1160px;
     --reading-max: 72ch;
@@ -58,9 +59,11 @@ h3,
 h4,
 h5,
 h6 {
+    font-family: var(--title-font-family);
     letter-spacing: -0.01em;
     line-height: 1.15;
     color: #1d1f1b;
+    font-weight: 700;
 }
 
 h1,
@@ -151,8 +154,9 @@ main#maincontent {
 
 .archive-brand {
     text-decoration: none;
-    display: flex;
-    flex-direction: column;
+    display: block;
+    flex: 0 1 min(44vw, 26rem);
+    max-width: min(44vw, 26rem);
     line-height: 1.1;
 }
 
@@ -161,23 +165,24 @@ main#maincontent {
     text-decoration: none;
 }
 
-.archive-brand-eyebrow {
-    color: var(--site-ink-soft);
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 0.15rem;
-}
-
 .archive-brand-title {
+    display: block;
+    font-family: var(--title-font-family);
+    font-size: clamp(1.05rem, 0.95rem + 0.5vw, 1.45rem);
+    font-weight: 700;
     color: var(--site-ink);
-    font-size: 0.98rem;
-    font-weight: 650;
-    max-width: 26ch;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
 }
 
 .archive-navbar .navbar-toggler {
     border-color: rgba(67, 89, 63, 0.32);
+    margin-left: auto;
+}
+
+.archive-navbar .navbar-nav {
+    gap: 0.15rem;
 }
 
 .archive-navbar .navbar-nav .nav-link {
@@ -690,7 +695,8 @@ main#maincontent {
 
 @media (max-width: 991.98px) {
     .archive-brand {
-        margin-right: auto;
+        max-width: calc(100% - 4rem);
+        flex-basis: auto;
     }
 
     .archive-navbar .navbar-collapse {
