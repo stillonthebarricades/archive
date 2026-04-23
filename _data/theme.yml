@@ -8,8 +8,8 @@
 #
 # featured image is used in home page banner and in meta markup to represent the collection
 # use either an objectid (from an item in this collect), a relative location of an image in this repo, or a full url to an image elsewhere
-featured-image: psychiana005
-featured-image-alt-text: # add alt text if using url for featured-image (objectid will be automatic from metadata)
+featured-image: assets/img/encampment.jpg
+featured-image-alt-text: Students standing near an encampment banner and flags
 # optional: add extra padding above collection title for a larger image feature. 
 home-title-y-padding: 10em # the margin from the top your title portion will appear.
 # optional: change position of background image, center, top, bottom
@@ -100,7 +100,7 @@ search-child-objects: true # true / false - if true, child objects will appear o
 navbar-color: dark
 # navbar background color, https://getbootstrap.com/docs/5.3/utilities/background/
 # Choose from bg-primary, bg-secondary, bg-success, bg-danger, bg-warning, bg-info, bg-light, bg-dark, bg-white
-navbar-background: bg-black
+navbar-background: bg-dark
 
 # BOOTSWATCH THEMES [optional!]
 # You can replace the standard Bootstrap theme with a Bootswatch (https://github.com/thomaspark/bootswatch) option
@@ -108,10 +108,10 @@ navbar-background: bg-black
 bootswatch: # leave blank or comment out for plain bootstrap
 
 # THEME FONTS [optional!]
-base-font-size: 1.2em
-text-color: "#191919"
-link-color: "#0d6efd"
-base-font-family: # comment out for bootstrap defaults. e.g. Roboto
+base-font-size: 1.08rem
+text-color: "#151515"
+link-color: "#7b2f35"
+base-font-family: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 font-cdn: # add font stylesheet, e.g. <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
 
 # THEME ICONS [optional!]
