@@ -7,6 +7,7 @@
                 <p class="mb-0">{{ site.description }}</p>
             </div>
             <nav aria-label="Footer navigation">
+                <p class="footer-col-title mb-2">Navigate</p>
                 <ul id="footer-nav" class="nav">
                     {%- assign navItems = site.data.config-nav | where_exp: 'item', 'item.dropdown_parent == nil' -%}
                     {% for nav in navItems %}
@@ -22,6 +23,7 @@
                 </ul>
             </nav>
             <div class="footer-meta">
+                <p class="footer-col-title mb-2">Project</p>
                 {% if site.organization-logo-nav %}
                 <p class="mb-3">
                     <a href="{{ site.organization-link }}">
@@ -36,6 +38,7 @@
                         </a>
                     </small>
                 </p>
+                <p class="mb-2"><a href="{{ site.source-code }}" target="_blank" rel="noopener">Source code repository</a></p>
                 <p class="mb-0">Updated {{ site.time | date: '%B %Y' }}</p>
             </div>
         </div>

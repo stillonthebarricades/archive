@@ -7,7 +7,6 @@ layout: default
 {% assign visual_items = parent_items | where_exp: "item","item.image_small or item.image_thumb" | shuffle %}
 {% assign display_templates = parent_items | map: "display_template" | uniq | compact %}
 {% assign locations_raw = parent_items | map: "location" | compact | join: ";" | split: ";" %}
-{% assign location_terms = locations_raw | array_count_uniq %}
 {% assign location_count = locations_raw | uniq | size %}
 {% assign subjects_raw = parent_items | map: "subject" | compact | join: ";" | downcase | split: ";" %}
 {% assign subject_terms = subjects_raw | array_count_uniq %}
@@ -20,17 +19,15 @@ layout: default
 {% assign raw_dates = dated_records | map: "date" | compact | uniq %}
 {% capture clean_years %}{% for date in raw_dates %}{% if date contains "-" %}{{ date | strip | split: "-" | first }}{% elsif date contains "/" %}{{ date | strip | split: "/" | last }}{% else %}{{ date | strip }}{% endif %}{% unless forloop.last %};{% endunless %}{% endfor %}{% endcapture %}
 {% assign date_range = clean_years | remove: " " | split: ";" | uniq | sort %}
-{% assign mid_index = date_range | size | divided_by: 2 %}
-{% assign split_index = date_range | size | divided_by: 3 %}
-{% assign split_index_2 = split_index | times: 2 %}
+{% assign lead_item = visual_items | first %}
 
 <div class="archive-home">
-  <section class="home-section home-overview">
+  <section class="home-section home-overview band-neutral">
     <div class="container">
       <div class="home-intro-grid">
-        <div>
+        <div class="overview-copy">
           <p class="section-kicker">Archive Overview</p>
-          <h2 class="section-title">A curated corpus for archival inquiry, interpretation, and public memory.</h2>
+          <h2 class="section-title">An editorial archive for study, context, and historical interpretation.</h2>
           <p class="section-lead">{{ site.description }}</p>
           <p class="mb-0">
             <a class="btn btn-primary" href="{{ '/about.html' | relative_url }}">Read Method and Scope</a>
@@ -61,27 +58,27 @@ layout: default
     </div>
   </section>
 
-  <section class="home-section home-explore">
+  <section class="home-section home-explore band-sand">
     <div class="container">
       <p class="section-kicker">Explore</p>
-      <h2 class="section-title">Choose an entry point that fits your research question.</h2>
+      <h2 class="section-title">Choose an entry point for browsing, chronology, geography, and themes.</h2>
       <div class="entry-grid">
-        <article class="entry-card">
+        <article class="entry-card entry-card--primary">
           <h3>Browse Archive</h3>
-          <p>Filter records by title, format, creator, and metadata fields for close analysis.</p>
+          <p>Filter records by title, format, creator, and metadata fields for close reading and comparison.</p>
           <a href="{{ '/browse.html' | relative_url }}" class="entry-link">Browse Records</a>
         </article>
-        <article class="entry-card">
+        <article class="entry-card entry-card--olive">
           <h3>Timeline</h3>
           <p>Follow continuities and turning points across dated records and events.</p>
           <a href="{{ '/timeline.html' | relative_url }}" class="entry-link">Study the Timeline</a>
         </article>
-        <article class="entry-card">
+        <article class="entry-card entry-card--rust">
           <h3>Map</h3>
           <p>Examine the spatial footprint of documents, actors, and institutional sites.</p>
           <a href="{{ '/map.html' | relative_url }}" class="entry-link">Explore Places</a>
         </article>
-        <article class="entry-card">
+        <article class="entry-card entry-card--stone">
           <h3>Themes and Subjects</h3>
           <p>Trace recurring topics, vocabularies, and conceptual clusters.</p>
           <a href="{{ '/subjects.html' | relative_url }}" class="entry-link">Browse Themes</a>
@@ -90,7 +87,26 @@ layout: default
     </div>
   </section>
 
-  <section class="home-section home-featured">
+  <section class="home-section home-cta-row band-olive">
+    <div class="container">
+      <div class="cta-grid">
+        <article class="cta-callout">
+          <p class="section-kicker">Chronology</p>
+          <h2 class="section-title">Trace events over time.</h2>
+          <p class="section-lead mb-3">Open the full timeline interface to move from broad periods to individual records.</p>
+          <a href="{{ '/timeline.html' | relative_url }}" class="btn btn-primary">Open Timeline</a>
+        </article>
+        <article class="cta-callout">
+          <p class="section-kicker">Geography</p>
+          <h2 class="section-title">Navigate the archive spatially.</h2>
+          <p class="section-lead mb-3">Use the map page to inspect place-based patterns and linked records.</p>
+          <a href="{{ '/map.html' | relative_url }}" class="btn btn-primary">Open Map</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section home-featured band-neutral">
     <div class="container">
       <div class="section-heading-row">
         <div>
@@ -99,8 +115,21 @@ layout: default
         </div>
         <a href="{{ '/browse.html' | relative_url }}" class="btn btn-outline-primary">View Full Catalog</a>
       </div>
-      <div class="featured-grid">
-        {% for item in visual_items limit: 6 %}
+      <div class="featured-editorial-grid">
+        {% if lead_item %}
+        <article class="featured-item-card featured-item-card--lead">
+          <a href="{{ '/items/' | relative_url }}{{ lead_item.objectid }}.html" class="featured-image-link">
+            <img class="lazyload featured-image featured-image--lead" data-src="{% if lead_item.image_small %}{{ lead_item.image_small | relative_url }}{% else %}{{ lead_item.image_thumb | relative_url }}{% endif %}" alt="{{ lead_item.image_alt_text | default: lead_item.title | escape }}">
+          </a>
+          <div class="featured-content">
+            <p class="featured-meta">{{ lead_item.display_template | default: "Record" | capitalize }}{% if lead_item.date %} | {{ lead_item.date }}{% endif %}</p>
+            <h3><a href="{{ '/items/' | relative_url }}{{ lead_item.objectid }}.html">{{ lead_item.title }}</a></h3>
+            <a href="{{ '/items/' | relative_url }}{{ lead_item.objectid }}.html" class="featured-action">Open record</a>
+          </div>
+        </article>
+        {% endif %}
+        <div class="featured-support-grid">
+        {% for item in visual_items offset: 1 limit: 4 %}
         <article class="featured-item-card">
           {% if item.image_small or item.image_thumb %}
           <a href="{{ '/items/' | relative_url }}{{ item.objectid }}.html" class="featured-image-link">
@@ -108,75 +137,46 @@ layout: default
           </a>
           {% endif %}
           <div class="featured-content">
-            <p class="featured-meta">{{ item.display_template | default: "Record" | upcase }}{% if item.date %} - {{ item.date }}{% endif %}</p>
+            <p class="featured-meta">{{ item.display_template | default: "Record" | capitalize }}{% if item.date %} | {{ item.date }}{% endif %}</p>
             <h3><a href="{{ '/items/' | relative_url }}{{ item.objectid }}.html">{{ item.title }}</a></h3>
             <a href="{{ '/items/' | relative_url }}{{ item.objectid }}.html" class="featured-action">Open record</a>
           </div>
         </article>
         {% endfor %}
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="home-section home-timeline-preview">
+  <section class="home-section home-themes band-rust">
     <div class="container">
-      <p class="section-kicker">Timeline Preview</p>
-      <h2 class="section-title">A chronological frame for the archive.</h2>
-      <div class="timeline-preview-shell">
-        <ol class="timeline-preview-track" aria-label="Timeline key periods">
-          {% if date_range.size > 0 %}
-          <li><span>{{ date_range | first }}</span></li>
-          <li><span>{{ date_range[split_index] | default: date_range | first }}</span></li>
-          <li><span>{{ date_range[split_index_2] | default: date_range[mid_index] }}</span></li>
-          <li><span>{{ date_range | last }}</span></li>
-          {% else %}
-          <li><span>Date metadata unavailable</span></li>
+      <div class="themes-shell">
+        <div>
+          <p class="section-kicker">Themes and Subjects</p>
+          <h2 class="section-title">Discover the archive through recurring topics and conceptual clusters.</h2>
+          <p class="section-lead mb-0">Use these high-frequency themes as starting points for focused browsing.</p>
+        </div>
+        <div class="tag-cloud-curated">
+          {% for term in subject_terms limit: 18 %}
+          {% assign clean_term = term[0] | strip %}
+          {% if clean_term != '' %}
+          <a class="tag-chip {% if forloop.index <= 4 %}tag-chip--major{% endif %}" href="{{ clean_term | url_param_escape | prepend: ':subject' | prepend: '/browse.html#' | relative_url }}">{{ clean_term }}</a>
           {% endif %}
-        </ol>
-        <p class="timeline-preview-text">Move from broad periodization to individual records, actors, and evidence trails.</p>
-        <a href="{{ '/timeline.html' | relative_url }}" class="btn btn-primary">Open Timeline</a>
+          {% endfor %}
+        </div>
+        <a href="{{ '/subjects.html' | relative_url }}" class="btn btn-hero-secondary">Open Subject Index</a>
       </div>
     </div>
   </section>
 
-  <section class="home-section home-themes-locations">
+  <section class="home-section home-data-access band-neutral">
     <div class="container">
-      <div class="themes-locations-grid">
-        <article class="curated-panel">
-          <p class="section-kicker">Themes</p>
-          <h2 class="section-title">Subject clusters and recurring terms.</h2>
-          <div class="tag-cloud-curated">
-            {% for term in subject_terms limit: 14 %}
-            {% assign clean_term = term[0] | strip %}
-            {% if clean_term != '' %}
-            <a class="tag-chip" href="{{ clean_term | url_param_escape | prepend: ':subject' | prepend: '/browse.html#' | relative_url }}">{{ clean_term }}</a>
-            {% endif %}
-            {% endfor %}
-          </div>
-          <a href="{{ '/subjects.html' | relative_url }}" class="btn btn-outline-primary mt-3">Open Subject Index</a>
-        </article>
-        <article class="curated-panel map-preview-panel">
-          <p class="section-kicker">Locations</p>
-          <h2 class="section-title">Geographies represented across the record.</h2>
-          <div class="location-chip-list">
-            {% for place in location_terms limit: 6 %}
-            {% assign clean_place = place[0] | strip %}
-            {% if clean_place != '' %}
-            <a class="location-chip" href="{{ clean_place | url_param_escape | prepend: ':location' | prepend: '/browse.html#' | relative_url }}">{{ clean_place }}</a>
-            {% endif %}
-            {% endfor %}
-          </div>
-          <a href="{{ '/map.html' | relative_url }}" class="btn btn-outline-primary mt-3">Open Map Interface</a>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="home-section home-data-access">
-    <div class="container">
-      <p class="section-kicker">Research Access</p>
-      <h2 class="section-title">Data access and technical transparency.</h2>
-      <p class="section-lead">Download structured metadata, inspect derived datasets, and review implementation details for reproducible scholarship.</p>
+      <div class="research-shell">
+        <div>
+          <p class="section-kicker">Research Access</p>
+          <h2 class="section-title">Data access and technical transparency.</h2>
+          <p class="section-lead mb-0">Download structured metadata, inspect derived datasets, and review implementation details for reproducible scholarship.</p>
+        </div>
       <div class="data-links">
         <a href="{{ '/assets/data/metadata.csv' | relative_url }}" download>Metadata (CSV)</a>
         <a href="{{ '/assets/data/metadata.json' | relative_url }}" target="_blank" rel="noopener">Metadata (JSON)</a>
@@ -184,6 +184,7 @@ layout: default
         <a href="{{ '/assets/data/timelinejs.json' | relative_url }}" target="_blank" rel="noopener">Timeline Data (JSON)</a>
         <a href="{{ '/data.html' | relative_url }}">Data Table View</a>
         <a href="{{ site.source-code }}" target="_blank" rel="noopener">Project Source Code</a>
+      </div>
       </div>
     </div>
   </section>
