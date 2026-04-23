@@ -52,14 +52,17 @@
 }
 </style>
 <div id="home-banner" class="mb-0 position-relative">
-    <div id="home-title-box">
-        <div class="editorial-banner-panel p-3 p-md-4 text-center text-white bg-dark bg-opacity-75">
-            <h1 class="display-2 editorial-banner-title">{{ page.banner-heading | default: site.title }}</h1>
-            {% if page.banner-sub-heading != false and page.banner-sub-heading or site.tagline %}<p class="editorial-banner-subtitle">{{ page.banner-sub-heading | default: site.tagline }}</p>{% endif %}
+    <div class="home-banner-inner container">
+        <div id="home-title-box">
+            <div class="editorial-banner-panel p-3 p-md-4 text-start text-white">
+                <p class="editorial-banner-kicker mb-2">Digital Archive</p>
+                <h1 class="display-2 editorial-banner-title">{{ page.banner-heading | default: site.title }}</h1>
+                {% if page.banner-sub-heading != false and page.banner-sub-heading or site.tagline %}<p class="editorial-banner-subtitle">{{ page.banner-sub-heading | default: site.tagline }}</p>{% endif %}
+            </div>
         </div>
     </div>
     {% if jumboLink != '' %}
-    <a class="text-white fs-6 position-absolute bottom-0 end-0 px-2 py-1 bg-dark bg-opacity-75" href="{{ jumboLink }}" title="Visit background image record">Featured Image</a>{% endif %}
+    <a class="home-banner-credit text-white position-absolute bottom-0 end-0 px-2 py-1" href="{{ jumboLink }}" title="Visit background image record">Featured Image</a>{% endif %}
 </div>
 {%- else -%}
 <div class="container py-4">

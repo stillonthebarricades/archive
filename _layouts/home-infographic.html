@@ -4,7 +4,7 @@ layout: page
 ---
 <div class="row">
 
-  <div class="col-lg-8">
+  <div class="col-lg-8 mb-4 mb-lg-0">
 
     <section class="editorial-section">
       <p class="editorial-kicker">Archive Overview</p>
@@ -17,29 +17,29 @@ layout: page
     </section>
     
   </div>
-  <div class="col-lg-4">  
+  <aside class="col-lg-4">  
 
-    <section class="editorial-section">
+    <section class="editorial-section-flat">
       <p class="editorial-kicker">Timeline Snapshot</p>
       {% include index/time.html %}
     </section>
 
-    <section class="editorial-section">
+    <section class="editorial-section-flat">
       <p class="editorial-kicker">Subject Paths</p>
       {% include index/featured-terms.html field="subject" title="Top Subjects" btn-color="primary" %}
     </section>
 
-    <section class="editorial-section">
+    <section class="editorial-section-flat">
       <p class="editorial-kicker">Geographic Scope</p>
       {% include index/featured-terms.html field="location" title="Locations" btn-color="outline-secondary" %}
     </section>
     
-    <section class="editorial-section">
+    <section class="editorial-section-flat">
       <p class="editorial-kicker">Collection Profile</p>
       {% include index/content.html %}
     </section>
 
-  </div>
+  </aside>
   <div class="col-md-12">
 
     <section class="editorial-section">

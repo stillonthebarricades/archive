@@ -9,7 +9,7 @@
     The color theme options can be set in "theme.yml"
 
 {%- endcomment -%}
-<nav class="navbar navbar-expand-lg {{ site.data.theme.navbar-background | default: 'bg-black' }}" data-bs-theme="{{ site.data.theme.navbar-color | default: 'dark' }}">
+<nav class="navbar navbar-expand-lg py-1 {{ site.data.theme.navbar-background | default: 'bg-black' }}" data-bs-theme="{{ site.data.theme.navbar-color | default: 'dark' }}">
     <div class="container">
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#page-nav" aria-controls="page-nav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -22,7 +22,7 @@
         </span>{% endif %}
         
         <div class="collapse navbar-collapse" id="page-nav">
-            <ul class="navbar-nav me-auto align-items-lg-center">
+            <ul class="navbar-nav me-auto align-items-lg-center" aria-label="Primary">
                 {%- assign navItems = site.data.config-nav | where_exp: 'item', 'item.display_name and item.dropdown_parent == nil' -%} 
                 {% for nav in navItems %}
                 {% if nav.stub %}
@@ -44,7 +44,7 @@
                 {%- endfor -%}
             </ul>
             
-            <div class="ms-lg-3 pt-2 pt-lg-0">
+            <div class="ms-lg-4 pt-2 pt-lg-0 nav-search-wrap">
                 {% include nav-search-lunr.html %}
             </div>
             

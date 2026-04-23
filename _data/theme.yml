@@ -11,7 +11,7 @@
 featured-image: assets/img/encampment.jpg
 featured-image-alt-text: Students standing near an encampment banner and flags
 # optional: add extra padding above collection title for a larger image feature. 
-home-title-y-padding: 10em # the margin from the top your title portion will appear.
+home-title-y-padding: 8em # the margin from the top your title portion will appear.
 # optional: change position of background image, center, top, bottom
 home-banner-image-position: center # Default is center
 
@@ -108,9 +108,9 @@ navbar-background: bg-dark
 bootswatch: # leave blank or comment out for plain bootstrap
 
 # THEME FONTS [optional!]
-base-font-size: 1.08rem
+base-font-size: 1.02rem
 text-color: "#151515"
-link-color: "#7b2f35"
+link-color: "#3f4e61"
 base-font-family: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 font-cdn: # add font stylesheet, e.g. <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
 

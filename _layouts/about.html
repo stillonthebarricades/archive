@@ -32,7 +32,8 @@ layout: default
     }
     {%- endif -%}
     .about-title {
-        padding-left: 15% !important;
+        padding-left: 10% !important;
+        max-width: 920px;
     }
     @media screen and (max-width: 576px) {
         {% if page.padding %}
@@ -47,8 +48,7 @@ layout: default
 <div id="about-feature">
     <div id="about-title-box">
         {% if page.heading or page.sub-heading %}
-        <div class="p-3 p-md-4 text-start text-white bg-dark bg-opacity-75 about-title editorial-banner-panel">
-            <p class="editorial-kicker text-light mb-2">About This Archive</p>
+        <div class="p-3 p-md-4 text-start text-white about-title editorial-banner-panel about-banner-panel">
             {% if page.heading %}<h2 class="display-3 editorial-banner-title">{{ page.heading }}</h2>{% endif %}
             {% if page.sub-heading  %}<p class="h5 editorial-banner-subtitle">{{ page.sub-heading }}</p>{% endif %}
         </div>
@@ -75,11 +75,11 @@ layout: default
         </div>
         {% endunless %}
     </div>
-    <div id="about-contents-wrapper" class="editorial-section">
+    <div id="about-contents-wrapper" class="editorial-section editorial-page-shell">
         {{ content }}
     </div>
     {% if page.credits == true %}
-    <div id="credits-contents-wrapper" class="editorial-section">
+    <div id="credits-contents-wrapper" class="editorial-section editorial-page-shell">
         {% include cb/credits.html %}
     </div>
     {% endif %}

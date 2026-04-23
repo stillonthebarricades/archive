@@ -179,7 +179,7 @@ $toc-a-color: #191919 !default;
 .jekyll-toc-list { 
     list-style: none;
     padding-left: 0;
-    font-style: italic;
+    font-style: normal;
 
     ul, ol {
         padding-left: 0;
@@ -187,16 +187,16 @@ $toc-a-color: #191919 !default;
     }
 
     > li {
-        font-size: 15px;
-        line-height: 1.2;
-        padding: 5px 0;
+        font-size: 14px;
+        line-height: 1.25;
+        padding: 4px 0;
     }
 
     li li {
-        font-size: 13px;
-        line-height: 1.2;
-        padding-top: 7px;
-        margin-left: 15px;
+        font-size: 12px;
+        line-height: 1.25;
+        padding-top: 6px;
+        margin-left: 12px;
         list-style: none;
     }
 
@@ -227,7 +227,7 @@ $toc-a-color: #191919 !default;
         grid-area: main;
         order: 1;
         min-width:0;
-        padding: 2.2rem 3rem;
+        padding: 2rem 2.5rem;
         overflow-x: hidden;
     }
     /* creating a narrow text column */
@@ -258,14 +258,14 @@ $toc-a-color: #191919 !default;
     #about-toc-title { display: none; }
     #about-toc-list { 
         display: block; 
-        padding: 1.2rem 0.5rem 1.5rem 0;
+        padding: 1rem 0.5rem 1.2rem 0;
     }
     .jekyll-toc-list { 
-        padding: 1rem;
+        padding: 0.9rem 0.85rem;
         border: 1px solid var(--site-border);
-        border-radius: 0.55rem;
+        border-radius: 0.25rem;
         background: var(--site-surface);
-        max-height: 90vh;
+        max-height: 85vh;
         overflow-y: auto;
         font-style: normal;
 
@@ -275,16 +275,16 @@ $toc-a-color: #191919 !default;
         }
 
         > li {
-            font-size: 15px;
-            line-height: 1.2;
-            padding: 7px 0;
+            font-size: 14px;
+            line-height: 1.25;
+            padding: 5px 0;
         }
 
         li li {
-            font-size: 13px;
-            line-height: 1.2;
-            padding-top: 7px;
-            margin-left: 15px;
+            font-size: 12px;
+            line-height: 1.25;
+            padding-top: 6px;
+            margin-left: 12px;
             list-style: none;
         }
 
