@@ -110,8 +110,8 @@ bootswatch: # leave blank or comment out for plain bootstrap
 
 # THEME FONTS [optional!]
 base-font-size: 1.02rem
-text-color: "#151515"
-link-color: "#3f4e61"
+text-color: "#172322"
+link-color: "#007a61"
 base-font-family: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 font-cdn: <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Yeseva+One&display=swap" rel="stylesheet">
 

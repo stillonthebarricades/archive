@@ -74,28 +74,105 @@
     /* get icons function */
     {% include helpers/get-icon.js %}
 
-    function buildPopupHtml(properties) {
-        // find item link
-        var itemHref = `{{ '/items/' | relative_url }}${ properties.parent ? properties.parent + ".html#" + properties.id : properties.id + ".html"}`;
-        // find image
+    var MAP_COORD_EPSILON = 1e-6;
+    var MAP_CLUSTER_LEAF_LIMIT = 150;
+
+    function itemHref(properties) {
+        return `{{ '/items/' | relative_url }}${ properties.parent ? properties.parent + ".html#" + properties.id : properties.id + ".html"}`;
+    }
+
+    function itemThumbHtml(properties, compact) {
         var imgAlt = properties.alt ? properties.alt : properties.title;
-        var thumbImg;
+        var imgClass = compact ? 'map-thumb map-thumb--list' : 'map-thumb';
         if (properties.img) {
-            thumbImg = '<img class="map-thumb" src="' + properties.img + '" alt="' + imgAlt + '">';
-        } else {
-            thumbImg = getIcon(properties.template, properties.format, "thumb");
+            return '<img class="' + imgClass + '" src="' + properties.img + '" alt="' + imgAlt + '">';
         }
-        // set up popup content
+        return getIcon(properties.template, properties.format, "thumb");
+    }
+
+    function buildPopupHtml(properties) {
+        var href = itemHref(properties);
+        var thumbImg = itemThumbHtml(properties, false);
         var popupTemplate = '<div class="archive-map-popup">' +
-            '<h2 class="h4"><a class="text-dark" href="' + itemHref + '">' + properties.title + '</a></h2>' +
-            '<div class="text-center"><a href="' + itemHref + '" >' + thumbImg + '</a></div><p>';
+            '<h2 class="h4"><a class="text-dark" href="' + href + '">' + properties.title + '</a></h2>' +
+            '<div class="text-center"><a href="' + href + '" >' + thumbImg + '</a></div><p>';
         {% for f in fields %}{% if f.display_name %}
         if (properties[{{ f.field | escape | jsonify }}]) {
             popupTemplate += '<strong>{{ f.display_name }}:</strong> ' + properties[{{ f.field | escape | jsonify }}] + '<br>';
         }
         {% endif %}{% endfor %}
-        popupTemplate += '</p><div class="text-center"><a class="btn btn-light" href="' + itemHref + '" >View Item</a></div></div>';
+        popupTemplate += '</p><div class="text-center"><a class="btn btn-light" href="' + href + '" >View Item</a></div></div>';
         return popupTemplate;
+    }
+
+    function buildMultiPopupHtml(propertiesList, totalReported) {
+        var total = totalReported != null && Number.isFinite(Number(totalReported)) ? Number(totalReported) : propertiesList.length;
+        var shown = propertiesList.length;
+        var extra = total > shown ? total - shown : 0;
+        var html = '<div class="archive-map-popup archive-map-popup--multi">';
+        html += '<p class="archive-map-popup__count mb-2"><strong>' + String(shown) + '</strong>';
+        if (total !== shown) {
+            html += ' of <strong>' + String(total) + '</strong>';
+        }
+        html += ' at this location</p>';
+        html += '<ul class="archive-map-popup__list list-unstyled mb-0">';
+        for (var i = 0; i < propertiesList.length; i++) {
+            var p = propertiesList[i];
+            var href = itemHref(p);
+            var thumb = itemThumbHtml(p, true);
+            html += '<li class="archive-map-popup__item"><a class="archive-map-popup__thumb" href="' + href + '">' + thumb + '</a>';
+            html += '<div class="archive-map-popup__meta"><h3 class="h6 mb-1"><a class="text-dark" href="' + href + '">' + (p.title || '') + '</a></h3>';
+            html += '<a class="btn btn-sm btn-light" href="' + href + '">View Item</a></div></li>';
+        }
+        html += '</ul>';
+        if (extra > 0) {
+            html += '<p class="small text-muted mb-0 mt-2">' + String(extra) + ' more not shown.</p>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function dedupeFeaturesById(features) {
+        if (!features?.length) return [];
+        var seen = {};
+        var out = [];
+        for (var i = 0; i < features.length; i++) {
+            var id = String(features[i].properties?.id ?? "");
+            if (seen[id]) continue;
+            seen[id] = true;
+            out.push(features[i]);
+        }
+        return out;
+    }
+
+    function coordsWithinEpsilon(a, b) {
+        return Math.abs(a[0] - b[0]) <= MAP_COORD_EPSILON && Math.abs(a[1] - b[1]) <= MAP_COORD_EPSILON;
+    }
+
+    function featuresHaveDistinctCoordinates(features) {
+        if (!features || features.length < 2) return false;
+        var ref = features[0].geometry?.coordinates;
+        if (!ref || ref.length < 2) return false;
+        for (var i = 1; i < features.length; i++) {
+            var c = features[i].geometry?.coordinates;
+            if (!c || c.length < 2) continue;
+            if (!coordsWithinEpsilon(c, ref)) return true;
+        }
+        return false;
+    }
+
+    function fitMapToFeatureCoordinates(coordsList) {
+        if (!coordsList?.length) return false;
+        var bounds = new maplibregl.LngLatBounds();
+        for (var i = 0; i < coordsList.length; i++) {
+            bounds.extend(coordsList[i]);
+        }
+        var sw = bounds.getSouthWest();
+        var ne = bounds.getNorthEast();
+        var span = Math.max(Math.abs(ne.lng - sw.lng), Math.abs(ne.lat - sw.lat));
+        if (!Number.isFinite(span) || span < 1e-14) return false;
+        map.fitBounds(bounds, { padding: 60, maxZoom: map.getMaxZoom(), duration: 500 });
+        return true;
     }
 
     function getFeatureBounds(featureCollection) {
@@ -880,26 +957,94 @@
 
         var popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '320px' });
 
-        map.on('click', 'archive-clusters', function(e) {
-            var features = map.queryRenderedFeatures(e.point, { layers: ['archive-clusters'] });
-            var clusterId = features?.[0]?.properties?.cluster_id;
-            if (clusterId === undefined || clusterId === null) return;
-            map.getSource('archive-items').getClusterExpansionZoom(clusterId, function(err, zoom) {
-                if (err) return;
-                map.easeTo({ center: features[0].geometry.coordinates, zoom: zoom });
+        /* Clicks on the count text hit `archive-cluster-count`, not the circle underneath — handle both. */
+        function handleArchiveClusterClick(e) {
+            var features = map.queryRenderedFeatures(e.point, { layers: ['archive-cluster-count', 'archive-clusters'] });
+            var clusterFeature = features.find(function(f) {
+                return f.properties != null && f.properties.cluster_id !== undefined && f.properties.cluster_id !== null;
             });
-        });
+            if (!clusterFeature) clusterFeature = features[0];
+            var clusterId = clusterFeature?.properties?.cluster_id;
+            if (clusterId === undefined || clusterId === null) return;
+            var center = clusterFeature.geometry.coordinates;
+            var pointCount = Number(clusterFeature.properties?.point_count);
+            if (!Number.isFinite(pointCount)) pointCount = 0;
+            var archiveSource = map.getSource('archive-items');
+            var leafLimit = Math.min(Math.max(pointCount, 1), MAP_CLUSTER_LEAF_LIMIT);
+
+            function openClusterMultiPopup(leaves) {
+                if (!leaves?.length) return;
+                var propsList = leaves.map(function(leaf) { return leaf.properties || {}; });
+                var html = buildMultiPopupHtml(propsList, pointCount);
+                popup.setLngLat(center).setHTML(html).addTo(map);
+            }
+
+            function finishWithLeaves(leaves) {
+                if (!leaves?.length) return;
+                if (featuresHaveDistinctCoordinates(leaves)) {
+                    var coordsList = leaves.map(function(leaf) { return leaf.geometry.coordinates; });
+                    if (fitMapToFeatureCoordinates(coordsList)) return;
+                    var nextZ = Math.min(map.getMaxZoom(), map.getZoom() + 1.5);
+                    if (nextZ > map.getZoom() + 1e-4) {
+                        map.easeTo({ center: center, zoom: nextZ });
+                        return;
+                    }
+                }
+                openClusterMultiPopup(leaves);
+            }
+
+            archiveSource.getClusterExpansionZoom(clusterId, function(err, targetZoom) {
+                if (err) {
+                    archiveSource.getClusterLeaves(clusterId, leafLimit, 0, function(err2, leaves) {
+                        if (!err2) finishWithLeaves(leaves);
+                    });
+                    return;
+                }
+                var currentZ = map.getZoom();
+                /* Supercluster often returns integer-ish zoom; map.getZoom() is fractional — compare with slack. */
+                if (targetZoom != null && Number.isFinite(targetZoom) && targetZoom > currentZ - 0.02) {
+                    var dest = targetZoom > currentZ + 1e-4 ? targetZoom : Math.min(map.getMaxZoom(), currentZ + 1);
+                    if (dest > currentZ + 1e-4) {
+                        map.easeTo({ center: center, zoom: dest });
+                        return;
+                    }
+                }
+                archiveSource.getClusterLeaves(clusterId, leafLimit, 0, function(err2, leaves) {
+                    if (err2 || !leaves?.length) return;
+                    finishWithLeaves(leaves);
+                });
+            });
+        }
+
+        map.on('click', 'archive-clusters', handleArchiveClusterClick);
+        map.on('click', 'archive-cluster-count', handleArchiveClusterClick);
 
         map.on('click', 'archive-unclustered-point', function(e) {
-            var feature = e.features?.[0];
-            if (!feature) return;
-            var coordinates = feature.geometry.coordinates.slice();
-            var html = buildPopupHtml(feature.properties || {});
-            popup.setLngLat(coordinates).setHTML(html).addTo(map);
+            var hits = dedupeFeaturesById(map.queryRenderedFeatures(e.point, { layers: ['archive-unclustered-point'] }));
+            if (!hits.length) return;
+            if (hits.length === 1) {
+                var c0 = hits[0].geometry.coordinates.slice();
+                popup.setLngLat(c0).setHTML(buildPopupHtml(hits[0].properties || {})).addTo(map);
+                return;
+            }
+            var ref = hits[0].geometry.coordinates;
+            var allSame = hits.every(function(f) { return coordsWithinEpsilon(f.geometry.coordinates, ref); });
+            if (allSame) {
+                var propsList = hits.map(function(h) { return h.properties || {}; });
+                popup.setLngLat(ref.slice()).setHTML(buildMultiPopupHtml(propsList, propsList.length)).addTo(map);
+                return;
+            }
+            var coordsList = hits.map(function(h) { return h.geometry.coordinates; });
+            if (!fitMapToFeatureCoordinates(coordsList)) {
+                var nextZ = Math.min(map.getMaxZoom(), map.getZoom() + 2);
+                map.easeTo({ center: hits[0].geometry.coordinates, zoom: nextZ });
+            }
         });
 
         map.on('mouseenter', 'archive-clusters', function() { map.getCanvas().style.cursor = 'pointer'; });
         map.on('mouseleave', 'archive-clusters', function() { map.getCanvas().style.cursor = ''; });
+        map.on('mouseenter', 'archive-cluster-count', function() { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', 'archive-cluster-count', function() { map.getCanvas().style.cursor = ''; });
         map.on('mouseenter', 'archive-unclustered-point', function() { map.getCanvas().style.cursor = 'pointer'; });
         map.on('mouseleave', 'archive-unclustered-point', function() { map.getCanvas().style.cursor = ''; });
 

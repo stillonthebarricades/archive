@@ -3,10 +3,10 @@
   <head prefix="og: http://ogp.me/ns#">
     {% include head/head.html %}
   </head>
-  <body class="d-flex flex-column h-100{% if page.layout == 'home-infographic' %} home-page{% endif %}">
+  <body class="d-flex flex-column h-100{% if page.layout == 'home-infographic' %} home-page{% endif %}{% if page.layout == 'about' %} layout-about{% endif %}">
     <div id="skip-to-content"><a href="#maincontent">Skip to main content</a></div>
     {% include collection-nav.html %}
-    {% include collection-banner.html %}
+    {% unless page.hide_collection_banner %}{% include collection-banner.html %}{% endunless %}
     <main id="maincontent" role="main" class="flex-shrink-0">
       {{ content }}
     </main>
