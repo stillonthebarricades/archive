@@ -216,6 +216,21 @@
         return false;
     }
 
+    function getArchiveFitBoundsPadding() {
+        const container = map.getContainer();
+        const width = container?.clientWidth || window.innerWidth || 1000;
+        const height = container?.clientHeight || window.innerHeight || 700;
+
+        // 15% gives the requested 10–20% margin.
+        // Clamp so it still works on very small and very large screens.
+        return {
+            left: Math.round(Math.max(40, Math.min(220, width * 0.15))),
+            right: Math.round(Math.max(40, Math.min(220, width * 0.15))),
+            top: Math.round(Math.max(40, Math.min(180, height * 0.15))),
+            bottom: Math.round(Math.max(40, Math.min(180, height * 0.15)))
+        };
+    }
+
     function fitMapToFeatureCoordinates(coordsList) {
         if (!coordsList?.length) return false;
         var bounds = new maplibregl.LngLatBounds();
@@ -226,7 +241,7 @@
         var ne = bounds.getNorthEast();
         var span = Math.max(Math.abs(ne.lng - sw.lng), Math.abs(ne.lat - sw.lat));
         if (!Number.isFinite(span) || span < 1e-14) return false;
-        map.fitBounds(bounds, { padding: 60, maxZoom: map.getMaxZoom(), duration: 500 });
+        map.fitBounds(bounds, { padding: getArchiveFitBoundsPadding(), maxZoom: map.getMaxZoom(), duration: 500 });
         return true;
     }
 

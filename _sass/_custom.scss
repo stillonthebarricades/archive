@@ -14,6 +14,7 @@
     /* Hero + UI accents: exact greens / reds you specified */
     --hero-teal: rgb(0, 200, 159);
     --hero-coral: rgb(255, 41, 78);
+    --hero-teal-strong: rgb(0, 170, 135);
     --site-bg: #f5fbf9;
     --site-surface: #ffffff;
     --site-surface-soft: #eaf6f3;
@@ -125,15 +126,15 @@ body.layout-about #maincontent {
 }
 
 .btn-primary {
-    background: var(--site-accent);
-    border-color: var(--site-accent);
+    background: var(--hero-teal);
+    border-color: var(--hero-teal);
     color: #ffffff;
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
-    background: var(--site-accent-strong);
-    border-color: var(--site-accent-strong);
+    background: var(--hero-teal-strong);
+    border-color: var(--hero-teal-strong);
     color: #ffffff;
 }
 
