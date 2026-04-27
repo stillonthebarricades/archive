@@ -76,6 +76,8 @@
 
     var MAP_COORD_EPSILON = 1e-6;
     var MAP_CLUSTER_LEAF_LIMIT = 150;
+    var MAP_CLICK_HIT_RADIUS = 18;
+    var MAP_CLUSTER_SCREEN_RADIUS = {{ site.data.theme.map-cluster-radius | default: 25 }} + MAP_CLICK_HIT_RADIUS;
 
     function itemHref(properties) {
         return `{{ '/items/' | relative_url }}${ properties.parent ? properties.parent + ".html#" + properties.id : properties.id + ".html"}`;
@@ -147,6 +149,59 @@
 
     function coordsWithinEpsilon(a, b) {
         return Math.abs(a[0] - b[0]) <= MAP_COORD_EPSILON && Math.abs(a[1] - b[1]) <= MAP_COORD_EPSILON;
+    }
+
+    function coordinateKey(coords) {
+        if (!coords || coords.length < 2) return "";
+        return String(Number(coords[0])) + "," + String(Number(coords[1]));
+    }
+
+    function sameExactCoordinate(a, b) {
+        return coordinateKey(a) === coordinateKey(b);
+    }
+
+    function featuresAtSameCoordinate(coords) {
+        var key = coordinateKey(coords);
+        if (!key) return [];
+        return geodata.features.filter(function(f) {
+            return coordinateKey(f.geometry?.coordinates) === key;
+        });
+    }
+
+    function propertiesFromFeatures(features) {
+        return (features || []).map(function(f) { return f.properties || {}; });
+    }
+
+    function archiveHitBox(point, radius) {
+        return [
+            [point.x - radius, point.y - radius],
+            [point.x + radius, point.y + radius]
+        ];
+    }
+
+    function queryArchiveRenderedFeatures(point) {
+        return map.queryRenderedFeatures(archiveHitBox(point, MAP_CLICK_HIT_RADIUS), {
+            layers: ['archive-cluster-count', 'archive-clusters', 'archive-unclustered-point']
+        });
+    }
+
+    function featuresNearScreenCoordinate(coords, radius) {
+        var center = map.project(coords);
+        return geodata.features.filter(function(f) {
+            var c = f.geometry?.coordinates;
+            if (!c || c.length < 2) return false;
+            var p = map.project(c);
+            return Math.abs(p.x - center.x) <= radius && Math.abs(p.y - center.y) <= radius;
+        });
+    }
+
+    function allFeaturesShareExactCoordinate(features) {
+        if (!features || features.length < 2) return true;
+        var ref = features[0].geometry?.coordinates;
+        if (!ref || ref.length < 2) return false;
+        return features.every(function(f) {
+            return sameExactCoordinate(f.geometry?.coordinates, ref);
+        });
     }
 
     function featuresHaveDistinctCoordinates(features) {
@@ -957,89 +1012,88 @@
 
         var popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '320px' });
 
-        /* Clicks on the count text hit `archive-cluster-count`, not the circle underneath — handle both. */
-        function handleArchiveClusterClick(e) {
-            var features = map.queryRenderedFeatures(e.point, { layers: ['archive-cluster-count', 'archive-clusters'] });
-            var clusterFeature = features.find(function(f) {
-                return f.properties != null && f.properties.cluster_id !== undefined && f.properties.cluster_id !== null;
-            });
-            if (!clusterFeature) clusterFeature = features[0];
-            var clusterId = clusterFeature?.properties?.cluster_id;
-            if (clusterId === undefined || clusterId === null) return;
-            var center = clusterFeature.geometry.coordinates;
-            var pointCount = Number(clusterFeature.properties?.point_count);
-            if (!Number.isFinite(pointCount)) pointCount = 0;
-            var archiveSource = map.getSource('archive-items');
-            var leafLimit = Math.min(Math.max(pointCount, 1), MAP_CLUSTER_LEAF_LIMIT);
-
-            function openClusterMultiPopup(leaves) {
-                if (!leaves?.length) return;
-                var propsList = leaves.map(function(leaf) { return leaf.properties || {}; });
-                var html = buildMultiPopupHtml(propsList, pointCount);
-                popup.setLngLat(center).setHTML(html).addTo(map);
+        function zoomToArchiveFeatures(features, center) {
+            var coordsList = (features || []).map(function(f) { return f.geometry?.coordinates; }).filter(Boolean);
+            if (fitMapToFeatureCoordinates(coordsList)) return;
+            var nextZ = Math.min(map.getMaxZoom(), map.getZoom() + 2);
+            if (nextZ > map.getZoom() + 1e-4) {
+                map.easeTo({ center: center || coordsList[0], zoom: nextZ });
             }
-
-            function finishWithLeaves(leaves) {
-                if (!leaves?.length) return;
-                if (featuresHaveDistinctCoordinates(leaves)) {
-                    var coordsList = leaves.map(function(leaf) { return leaf.geometry.coordinates; });
-                    if (fitMapToFeatureCoordinates(coordsList)) return;
-                    var nextZ = Math.min(map.getMaxZoom(), map.getZoom() + 1.5);
-                    if (nextZ > map.getZoom() + 1e-4) {
-                        map.easeTo({ center: center, zoom: nextZ });
-                        return;
-                    }
-                }
-                openClusterMultiPopup(leaves);
-            }
-
-            archiveSource.getClusterExpansionZoom(clusterId, function(err, targetZoom) {
-                if (err) {
-                    archiveSource.getClusterLeaves(clusterId, leafLimit, 0, function(err2, leaves) {
-                        if (!err2) finishWithLeaves(leaves);
-                    });
-                    return;
-                }
-                var currentZ = map.getZoom();
-                /* Supercluster often returns integer-ish zoom; map.getZoom() is fractional — compare with slack. */
-                if (targetZoom != null && Number.isFinite(targetZoom) && targetZoom > currentZ - 0.02) {
-                    var dest = targetZoom > currentZ + 1e-4 ? targetZoom : Math.min(map.getMaxZoom(), currentZ + 1);
-                    if (dest > currentZ + 1e-4) {
-                        map.easeTo({ center: center, zoom: dest });
-                        return;
-                    }
-                }
-                archiveSource.getClusterLeaves(clusterId, leafLimit, 0, function(err2, leaves) {
-                    if (err2 || !leaves?.length) return;
-                    finishWithLeaves(leaves);
-                });
-            });
         }
 
-        map.on('click', 'archive-clusters', handleArchiveClusterClick);
-        map.on('click', 'archive-cluster-count', handleArchiveClusterClick);
+        function openArchiveFeatureGroup(features, center, totalReported) {
+            if (!features?.length) return;
+            if (features.length === 1) {
+                popup.setLngLat(center || features[0].geometry.coordinates).setHTML(buildPopupHtml(features[0].properties || {})).addTo(map);
+                return;
+            }
+            popup.setLngLat(center || features[0].geometry.coordinates)
+                .setHTML(buildMultiPopupHtml(propertiesFromFeatures(features), totalReported || features.length))
+                .addTo(map);
+        }
 
-        map.on('click', 'archive-unclustered-point', function(e) {
-            var hits = dedupeFeaturesById(map.queryRenderedFeatures(e.point, { layers: ['archive-unclustered-point'] }));
+        async function handleArchiveFeatureClick(e) {
+            var hits = queryArchiveRenderedFeatures(e.point);
             if (!hits.length) return;
-            if (hits.length === 1) {
-                var c0 = hits[0].geometry.coordinates.slice();
-                popup.setLngLat(c0).setHTML(buildPopupHtml(hits[0].properties || {})).addTo(map);
+            var clusterFeature = hits.find(function(f) {
+                return f.properties != null && f.properties.cluster_id !== undefined && f.properties.cluster_id !== null;
+            });
+            var source = map.getSource('archive-items');
+
+            if (clusterFeature) {
+                e.preventDefault();
+                var center = clusterFeature.geometry.coordinates;
+                var clusterId = clusterFeature.properties.cluster_id;
+                var pointCount = Number(clusterFeature.properties?.point_count);
+                if (!Number.isFinite(pointCount)) pointCount = 0;
+                var leafLimit = Math.min(Math.max(pointCount, 1), MAP_CLUSTER_LEAF_LIMIT);
+                console.log('[cluster click]', {
+                    clusterId,
+                    pointCount,
+                    sourceHasLeaves: typeof source.getClusterLeaves,
+                    sourceHasExpansionZoom: typeof source.getClusterExpansionZoom
+                });
+
+                function finishCluster(features) {
+                    if (!features?.length) return;
+                    if (allFeaturesShareExactCoordinate(features)) {
+                        openArchiveFeatureGroup(features, center, pointCount);
+                        return;
+                    }
+                    zoomToArchiveFeatures(features, center);
+                }
+
+                if (source?.getClusterLeaves) {
+                    try {
+                        var leaves = await source.getClusterLeaves(clusterId, leafLimit, 0);
+                        if (leaves?.length) {
+                            finishCluster(leaves);
+                            return;
+                        }
+                    } catch (err) {
+                        console.warn('[cluster click] getClusterLeaves failed', err);
+                    }
+                    finishCluster(featuresNearScreenCoordinate(center, MAP_CLUSTER_SCREEN_RADIUS));
+                } else {
+                    finishCluster(featuresNearScreenCoordinate(center, MAP_CLUSTER_SCREEN_RADIUS));
+                }
                 return;
             }
-            var ref = hits[0].geometry.coordinates;
-            var allSame = hits.every(function(f) { return coordsWithinEpsilon(f.geometry.coordinates, ref); });
-            if (allSame) {
-                var propsList = hits.map(function(h) { return h.properties || {}; });
-                popup.setLngLat(ref.slice()).setHTML(buildMultiPopupHtml(propsList, propsList.length)).addTo(map);
+
+            var pointHits = dedupeFeaturesById(hits.filter(function(f) {
+                return f.layer?.id === 'archive-unclustered-point';
+            }));
+            if (!pointHits.length) return;
+            e.preventDefault();
+            if (pointHits.length > 1 && !allFeaturesShareExactCoordinate(pointHits)) {
+                zoomToArchiveFeatures(pointHits, pointHits[0].geometry.coordinates);
                 return;
             }
-            var coordsList = hits.map(function(h) { return h.geometry.coordinates; });
-            if (!fitMapToFeatureCoordinates(coordsList)) {
-                var nextZ = Math.min(map.getMaxZoom(), map.getZoom() + 2);
-                map.easeTo({ center: hits[0].geometry.coordinates, zoom: nextZ });
-            }
-        });
+            var sameLocationFeatures = featuresAtSameCoordinate(pointHits[0].geometry.coordinates);
+            openArchiveFeatureGroup(sameLocationFeatures.length ? sameLocationFeatures : [pointHits[0]], pointHits[0].geometry.coordinates);
+        }
+
+        map.on('click', handleArchiveFeatureClick);
 
         map.on('mouseenter', 'archive-clusters', function() { map.getCanvas().style.cursor = 'pointer'; });
         map.on('mouseleave', 'archive-clusters', function() { map.getCanvas().style.cursor = ''; });
